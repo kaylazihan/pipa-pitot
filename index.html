@@ -1,0 +1,2424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lab Virtual Pipa Pitot — Fisika Kelas XI</title>
+<meta name="description" content="Simulasi virtual pipa pitot untuk Fisika kelas XI: teori Bernoulli, pengukuran kelajuan fluida dari beda tinggi manometer, analisis data, dan latihan soal." />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --bg: #eef3fb;
+    --surface: #ffffff;
+    --ink: #0f1b2d;
+    --muted: #5b6b85;
+    --line: #dce6f5;
+    --blue: #1d4ed8;
+    --blue-2: #3b82f6;
+    --cyan: #0e7490;
+    --soft: #f2f7ff;
+    --good: #0f766e;
+    --bad: #b91c1c;
+    --radius: 18px;
+    --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--ink);
+    background:
+      radial-gradient(1100px 620px at 12% -12%, #dbeafe 0%, rgba(219, 234, 254, 0) 62%),
+      radial-gradient(900px 520px at 102% -4%, #e0f2fe 0%, rgba(224, 242, 254, 0) 58%),
+      var(--bg);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: rgba(37, 99, 235, .18); }
+
+  /* ---------------- Header ---------------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 11px clamp(14px, 4vw, 40px);
+    background: rgba(255, 255, 255, .87);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand { display: flex; align-items: center; gap: 11px; }
+
+  .brand .mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #22d3ee);
+    box-shadow: 0 10px 20px -10px rgba(37, 99, 235, .8);
+  }
+
+  .brand b { display: block; font-size: 15px; letter-spacing: -.01em; }
+  .brand small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: #eff4fd;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .tab {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 650;
+    padding: 7px 14px;
+    border-radius: 9px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .16s;
+  }
+
+  .tab:hover { color: var(--ink); }
+  .tab.on { background: #fff; color: var(--ink); box-shadow: 0 2px 10px rgba(15, 27, 45, .1); }
+  .tab:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  /* ---------------- Layout ---------------- */
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(16px, 3vw, 30px) clamp(14px, 3vw, 28px) 70px;
+  }
+
+  .intro { margin: 6px 0 18px; }
+
+  .intro h1 {
+    margin: 0 0 8px;
+    font-size: clamp(24px, 3.6vw, 36px);
+    letter-spacing: -.03em;
+    line-height: 1.15;
+  }
+
+  .intro p {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.65;
+    max-width: 72ch;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .chip {
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: .02em;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eaf2ff;
+    color: #1e40af;
+    border: 1px solid #d3e3fc;
+  }
+
+  .chip.teal { background: #e6fbf7; color: #0f766e; border-color: #c8f1e8; }
+
+  .panel { display: none; }
+  .panel.on { display: block; animation: rise .3s cubic-bezier(.22, .8, .3, 1); }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* ---------------- Cards ---------------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: 0 20px 46px -42px rgba(15, 27, 45, .65);
+  }
+
+  .card h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    letter-spacing: -.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card h3 .num {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-size: 11.5px;
+    color: #1d4ed8;
+    background: #e8f0ff;
+    flex: none;
+  }
+
+  .card p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+  .card p:last-child { margin-bottom: 0; }
+  .card ul, .card ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .card li { margin-bottom: 6px; }
+  .card li:last-child { margin-bottom: 0; }
+  .card strong { color: var(--ink); }
+
+  /* ---------------- Simulation ---------------- */
+  .sim-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 15px;
+    align-items: start;
+  }
+
+  .col { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+
+  .stage {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fbfdff;
+    border: 1px solid var(--line);
+  }
+
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .stage.scene { aspect-ratio: 16 / 10; min-height: 300px; }
+  .stage.chart { aspect-ratio: 16 / 9; min-height: 230px; }
+
+  .hint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #6b7c96;
+  }
+
+  .ctrl { margin-bottom: 14px; }
+  .ctrl:last-child { margin-bottom: 0; }
+
+  .ctrl-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 12.5px;
+    font-weight: 650;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  .ctrl-top .val {
+    color: var(--blue);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 20px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 99px;
+    background: #dbe7f8;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #22d3ee);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, .45);
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 6px;
+    border-radius: 99px;
+    background: #dbe7f8;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #22d3ee);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, .45);
+  }
+
+  input[type="range"]:focus-visible { outline: none; }
+  input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px rgba(37, 99, 235, .2); }
+
+  select {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 10px;
+    border: 1px solid #cfddf2;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+
+  select:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+  .preset {
+    border: 1px dashed #c3d6f2;
+    background: #f7fbff;
+    color: #1e40af;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 650;
+    padding: 5px 9px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+
+  .preset:hover { background: #eaf3ff; border-color: #93bbf5; }
+
+  /* ---------------- Stats ---------------- */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+  .stat {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 12px;
+    background: linear-gradient(160deg, #fbfdff, #f3f8ff);
+    min-width: 0;
+  }
+
+  .stat span {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .stat strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 17px;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+  }
+
+  .stat.accent strong { color: var(--blue); }
+  .stat.teal strong { color: #0f766e; }
+
+  .verify {
+    margin-top: 11px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    background: #ecfdf5;
+    border: 1px solid #bbf0dd;
+    color: #0f766e;
+  }
+
+  /* ---------------- Formula ---------------- */
+  .formula-card {
+    border: 1px solid #d6e6fd;
+    border-radius: 14px;
+    padding: 16px;
+    background: linear-gradient(160deg, #f4f9ff, #eef6ff);
+    text-align: center;
+  }
+
+  .eq {
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+    font-size: clamp(21px, 3vw, 30px);
+    color: #12305e;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.2;
+  }
+
+  .frac {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    text-align: center;
+    font-size: .78em;
+    margin: 0 .18em;
+  }
+
+  .frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 .3em .08em; }
+  .frac > span:last-child { padding-top: .1em; }
+
+  .formula-note { margin-top: 10px; font-size: 12px; color: #64748b; }
+
+  .formula-card.mini { margin-top: 12px; padding: 12px; }
+  .formula-card.mini .eq { font-size: 20px; }
+
+  .varlist { margin: 12px 0 0; display: grid; gap: 7px; }
+
+  .varlist div {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .varlist b {
+    color: #12305e;
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+    font-size: 15px;
+    text-align: center;
+  }
+
+  .steps { counter-reset: step; margin: 0; padding: 0; list-style: none; }
+
+  .steps li {
+    position: relative;
+    padding-left: 34px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #e8f0ff;
+  }
+
+  .steps code, .mono {
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+    font-size: 1.02em;
+    color: #12305e;
+  }
+
+  .theory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    align-items: start;
+  }
+
+  .warn-list li::marker { color: #dc2626; }
+
+  details.example {
+    margin-top: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #fbfdff;
+  }
+
+  details.example summary {
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1e40af;
+    list-style: none;
+  }
+
+  details.example summary::-webkit-details-marker { display: none; }
+  details.example summary::before { content: '▸ '; color: #93bbf5; }
+  details.example[open] summary::before { content: '▾ '; }
+
+  details.example .body { margin-top: 10px; font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+
+  /* ---------------- Table & analysis ---------------- */
+  .analysis-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 15px;
+    align-items: start;
+  }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid #cfddf2;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    padding: 8px 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .1s;
+  }
+
+  .btn:hover { background: #f4f9ff; border-color: #a9c8f2; }
+  .btn:active { transform: scale(.98); }
+  .btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .btn.primary {
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 10px 22px -14px rgba(37, 99, 235, .95);
+  }
+
+  .btn.primary:hover { filter: brightness(1.06); background: linear-gradient(135deg, #2563eb, #3b82f6); }
+
+  .btn.ghost { background: transparent; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+  th, td {
+    padding: 9px 10px;
+    text-align: right;
+    border-bottom: 1px solid #edf3fc;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  th {
+    background: #f4f9ff;
+    color: #475569;
+    font-size: 11px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+  }
+
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: #fafcff; }
+
+  .empty-row td {
+    text-align: center !important;
+    color: #93a4bd;
+    font-style: italic;
+    padding: 22px 10px;
+    white-space: normal;
+  }
+
+  .slope-box {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .slope-item {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 10px 12px;
+    background: #fbfdff;
+  }
+
+  .slope-item span { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+  .slope-item strong { display: block; margin-top: 3px; font-size: 15px; font-variant-numeric: tabular-nums; }
+
+  /* ---------------- Quiz ---------------- */
+  .quiz-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    max-width: 900px;
+    margin-bottom: 14px;
+  }
+
+  .score-pill {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1e40af;
+    background: #e8f0ff;
+    border: 1px solid #d3e3fc;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .quiz-list { display: grid; gap: 14px; max-width: 900px; }
+
+  .q-card { padding: 17px 18px; }
+
+  .q-text { font-size: 14.5px; line-height: 1.6; font-weight: 600; margin: 0 0 12px; }
+  .q-num { color: #93a4bd; font-weight: 800; margin-right: 6px; }
+
+  .options { display: grid; gap: 8px; }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13.5px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+
+  .opt:hover { border-color: #a9c8f2; background: #f7fbff; }
+  .opt:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .opt .letter {
+    flex: none;
+    width: 21px;
+    height: 21px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 11.5px;
+    font-weight: 800;
+    background: #eef4fd;
+    color: #475569;
+  }
+
+  .opt.correct { border-color: #0f766e; background: #ecfdf5; color: #065f46; }
+  .opt.correct .letter { background: #ccfbf1; color: #0f766e; }
+  .opt.wrong { border-color: #dc2626; background: #fef2f2; color: #991b1b; }
+  .opt.wrong .letter { background: #fee2e2; color: #b91c1c; }
+  .opt[disabled] { cursor: default; }
+
+  .why {
+    display: none;
+    margin-top: 11px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f4f9ff;
+    border: 1px solid #dbe9fb;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #334155;
+  }
+
+  .why.show { display: block; animation: rise .25s ease; }
+  .why b { color: #1e40af; }
+
+  /* ---------------- Materi (slide viewer) ---------------- */
+  .materi-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 286px;
+    gap: 13px;
+    align-items: start;
+  }
+
+  .slide-card { padding: 12px; }
+
+  .slide-stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 13px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--line);
+    container-type: inline-size;
+  }
+
+  .slide-deco { position: absolute; border-radius: 50%; pointer-events: none; }
+  .slide-deco.d1 {
+    width: 40%; aspect-ratio: 1; right: -10%; top: -24%;
+    background: radial-gradient(circle at 35% 35%, #dbeafe, #eff6ff 62%, rgba(255,255,255,0) 72%);
+  }
+  .slide-deco.d2 {
+    width: 27%; aspect-ratio: 1; left: -7%; bottom: -20%;
+    background: radial-gradient(circle at 60% 40%, #cffafe, #ecfeff 60%, rgba(255,255,255,0) 72%);
+  }
+
+  .slide-body {
+    position: relative;
+    height: 100%;
+    padding: 5% 6.5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 17px;
+    font-size: clamp(11px, 1.95cqw, 21px);
+    line-height: 1.55;
+    color: #1e293b;
+  }
+
+  .slide-body.cover { text-align: center; align-items: center; }
+
+  .slide-kicker {
+    font-size: .58em;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #2563eb;
+    font-weight: 800;
+    margin-bottom: 1em;
+  }
+
+  .slide-title {
+    margin: 0 0 .7em;
+    font-size: 1.9em;
+    line-height: 1.12;
+    letter-spacing: -.025em;
+    color: #0f172a;
+  }
+
+  .slide-cover-title {
+    margin: 0 0 .3em;
+    font-size: 3em;
+    line-height: 1;
+    letter-spacing: -.035em;
+    color: #0f172a;
+  }
+
+  .slide-text { color: #334155; }
+  .slide-text p { margin: 0 0 .65em; }
+  .slide-text ul { margin: 0; padding-left: 1.15em; }
+  .slide-text li { margin-bottom: .5em; }
+  .slide-text li::marker { color: #2563eb; }
+  .slide-text strong { color: #0f172a; }
+  .slide-text .cover-sub { color: #475569; font-size: .92em; }
+
+  .slide-text .formula-line {
+    font-family: 'Cambria Math', Cambria, Georgia, serif;
+    font-size: 1.5em;
+    color: #12305e;
+    text-align: center;
+    margin: .25em 0 .45em;
+  }
+
+  .slide-text .mini-note { font-size: .72em; color: #64748b; text-align: center; }
+
+  .slide-text .result-chip {
+    display: inline-block;
+    margin-top: .35em;
+    padding: .3em .75em;
+    border-radius: 9px;
+    background: #ecfdf5;
+    border: 1px solid #bbf0dd;
+    color: #0f766e;
+    font-weight: 700;
+  }
+
+  .slide-text .btn { font-size: .72em; padding: .45em .9em; margin-top: .7em; }
+
+  .slide-controls { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .slide-controls .btn { font-size: 12.5px; padding: 7px 12px; }
+  .slide-controls .btn[disabled] { opacity: .4; cursor: default; }
+  .slide-controls .btn[disabled]:hover { background: #fff; border-color: #cfddf2; }
+
+  .slide-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slide-list { display: grid; gap: 3px; }
+
+  .slide-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    text-align: left;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 6px 8px;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+
+  .slide-item:hover { background: #f4f9ff; color: var(--ink); }
+  .slide-item:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .slide-item.on { background: #eaf2ff; border-color: #d3e3fc; color: #1e40af; font-weight: 700; }
+
+  .slide-item .n {
+    flex: none;
+    width: 19px;
+    height: 19px;
+    border-radius: 6px;
+    background: #eef4fd;
+    display: grid;
+    place-items: center;
+    font-size: 10.5px;
+    font-weight: 800;
+  }
+
+  .slide-item.on .n { background: #d3e3fc; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    margin-top: 26px;
+    padding-top: 16px;
+    font-size: 12px;
+    color: #8494ab;
+    line-height: 1.7;
+  }
+
+  /* ---------------- Laptop landscape (1280×720 … 1536×864) ---------------- */
+  @media (min-width: 1024px) and (max-height: 950px) {
+    .topbar { padding: 8px 26px; }
+    .brand .mark { width: 34px; height: 34px; font-size: 15px; }
+    .brand b { font-size: 14.5px; }
+    .brand small { font-size: 11px; }
+    .tab { padding: 6px 13px; font-size: 13px; }
+
+    main { padding: 16px 26px 22px; }
+
+    .intro { margin: 0 0 12px; }
+    .intro h1 { font-size: clamp(24px, 2.1vw, 29px); margin-bottom: 5px; }
+    .intro p { font-size: 13.5px; line-height: 1.55; margin-bottom: 9px; max-width: 104ch; }
+    .chip { font-size: 10.5px; padding: 4px 9px; }
+
+    .card { padding: 14px; }
+    .card h3 { font-size: 14px; margin-bottom: 9px; }
+    .card h3 .num { width: 20px; height: 20px; font-size: 11px; }
+
+    .sim-grid { grid-template-columns: minmax(0, 1fr) 332px; gap: 13px; }
+    .col { gap: 13px; }
+    .materi-grid { grid-template-columns: minmax(0, 1fr) 252px; gap: 13px; }
+    .slide-card { padding: 10px; }
+    .slide-controls { margin-top: 9px; }
+
+    .stage.scene {
+      aspect-ratio: auto;
+      height: clamp(320px, calc(100vh - 330px), 520px);
+      min-height: 0;
+    }
+
+    .hint { font-size: 11.5px; margin-top: 9px; line-height: 1.55; }
+
+    .ctrl { margin-bottom: 10px; }
+    .ctrl-top { font-size: 12px; margin-bottom: 6px; }
+    input[type="range"] { height: 18px; }
+    select { padding: 8px 10px; font-size: 13px; }
+    .presets { margin-top: 8px; }
+    .preset { font-size: 11px; padding: 4px 8px; }
+
+    .stats { gap: 8px; }
+    .stat { padding: 8px 10px; }
+    .stat span { font-size: 10px; }
+    .stat strong { font-size: 15px; margin-top: 3px; }
+
+    .verify { margin-top: 9px; padding: 8px 10px; font-size: 11.5px; line-height: 1.45; }
+
+    .formula-card.mini { padding: 9px; margin-top: 9px; }
+    .formula-card.mini .eq { font-size: 16px; }
+
+    footer { margin-top: 16px; padding-top: 12px; font-size: 11.5px; }
+  }
+
+  /* layar laptop pendek (720–820 px): rapatkan lagi */
+  @media (min-width: 1024px) and (max-height: 820px) {
+    main { padding-top: 12px; }
+    .intro h1 { font-size: 22px; }
+    .intro p { font-size: 12.5px; line-height: 1.5; }
+    .formula-card.mini { padding: 7px; margin-top: 7px; }
+    .formula-card.mini .eq { font-size: 15px; }
+    .verify { margin-top: 8px; padding: 7px 9px; font-size: 11px; line-height: 1.4; }
+  }
+
+  @media (min-width: 1024px) and (max-height: 745px) {
+    .chips { display: none; }
+    .intro { margin-bottom: 10px; }
+    .formula-card.mini { display: none; }
+  }
+
+  /* ---------------- Responsive ---------------- */
+  @media (max-width: 1000px) {
+    .sim-grid, .analysis-grid, .materi-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 720px) {
+    .topbar { padding: 10px 14px; }
+    .tabs { margin-left: 0; width: 100%; }
+    .brand small { display: none; }
+    .stats { grid-template-columns: 1fr; }
+    .stage.scene { min-height: 320px; aspect-ratio: auto; height: auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      transition-duration: .001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">▷</span>
+    <div>
+      <b>Lab Virtual Pipa Pitot</b>
+      <small>Fisika Kelas XI · Fluida Dinamis</small>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Bagian pembelajaran">
+    <button class="tab on" data-tab="simulasi" role="tab" aria-selected="true">Simulasi</button>
+    <button class="tab" data-tab="materi" role="tab" aria-selected="false">Materi</button>
+    <button class="tab" data-tab="teori" role="tab" aria-selected="false">Teori</button>
+    <button class="tab" data-tab="analisis" role="tab" aria-selected="false">Analisis</button>
+    <button class="tab" data-tab="latihan" role="tab" aria-selected="false">Latihan</button>
+  </nav>
+</header>
+
+<main>
+  <section class="intro">
+    <h1>Bagaimana pipa pitot mengukur kelajuan fluida?</h1>
+    <p>
+      Tabung pitot mengubah kelajuan aliran menjadi beda tekanan, lalu beda tekanan itu dibaca
+      sebagai selisih tinggi zat cair pada manometer. Ubah jenis fluida, laju aliran, dan zat cair
+      manometer untuk melihat hubungannya secara langsung.
+    </p>
+    <div class="chips">
+      <span class="chip">Fisika XI</span>
+      <span class="chip">Fluida Dinamis</span>
+      <span class="chip teal">Hukum Bernoulli</span>
+      <span class="chip teal">Tekanan Stagnasi</span>
+    </div>
+  </section>
+
+  <!-- ==================== SIMULASI ==================== -->
+  <section class="panel on" id="panel-simulasi" role="tabpanel">
+    <div class="sim-grid">
+      <div class="col">
+        <div class="card">
+          <h3><span class="num">1</span> Potongan melintang pipa &amp; tabung pitot</h3>
+          <div class="stage scene"><canvas id="sceneCanvas"></canvas></div>
+          <p class="hint">
+            Fluida mengalir dari kiri ke kanan. Mulut tabung menghadap aliran sehingga fluida
+            berhenti di titik stagnasi. Selisih tinggi zat cair pada manometer (h) sebanding
+            dengan kuadrat kelajuan aliran.
+          </p>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card">
+          <h3><span class="num">2</span> Pengaturan</h3>
+
+          <div class="ctrl">
+            <div class="ctrl-top">
+              <label for="vRange">Kelajuan aliran (v)</label>
+              <span class="val" id="vValue">15,0 m/s</span>
+            </div>
+            <input type="range" id="vRange" min="0" max="35" step="0.1" value="15" />
+          </div>
+
+          <div class="ctrl">
+            <div class="ctrl-top"><label for="fluidSel">Fluida yang mengalir (ρ)</label></div>
+            <select id="fluidSel"></select>
+          </div>
+
+          <div class="ctrl">
+            <div class="ctrl-top"><label for="liquidSel">Zat cair manometer (ρ′)</label></div>
+            <select id="liquidSel"></select>
+          </div>
+
+          <div class="presets">
+            <button class="preset" data-preset="udara-air">Udara + air</button>
+            <button class="preset" data-preset="udara-raksa">Udara + raksa</button>
+            <button class="preset" data-preset="air-raksa">Air + raksa</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><span class="num">3</span> Hasil pengukuran</h3>
+          <div class="stats">
+            <div class="stat accent">
+              <span>Tekanan dinamis ½ρv²</span>
+              <strong id="dpOut">—</strong>
+            </div>
+            <div class="stat accent">
+              <span>Selisih tinggi h</span>
+              <strong id="hOut">—</strong>
+            </div>
+            <div class="stat teal">
+              <span>v hasil ukur √(2ρ′gh/ρ)</span>
+              <strong id="vmOut">—</strong>
+            </div>
+            <div class="stat">
+              <span>Massa jenis fluida</span>
+              <strong id="rhoOut">—</strong>
+            </div>
+          </div>
+
+          <div class="verify" id="verifyBox">—</div>
+
+          <div class="formula-card mini">
+            <div class="eq">v = √<span class="frac"><span>2 ρ′ g h</span><span>ρ</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MATERI (dari presentasi Kelompok 3) ==================== -->
+  <section class="panel" id="panel-materi" role="tabpanel">
+    <div class="materi-grid">
+      <div class="card slide-card">
+        <div class="slide-stage" id="slideStage">
+          <div class="slide-deco d1"></div>
+          <div class="slide-deco d2"></div>
+          <div class="slide-body" id="slideBody"></div>
+        </div>
+        <div class="slide-controls">
+          <button class="btn" id="slidePrev" aria-label="Slide sebelumnya">‹ Sebelumnya</button>
+          <button class="btn" id="slideNext" aria-label="Slide berikutnya">Berikutnya ›</button>
+          <span class="slide-count" id="slideCount">1 / 8</span>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card">
+          <h3><span class="num">▤</span> Daftar slide</h3>
+          <div class="slide-list" id="slideList"></div>
+        </div>
+        <div class="card">
+          <p class="hint" style="margin:0">
+            Materi diadaptasi dari presentasi <strong>Kelompok 3</strong> — Zihan, Alike, Aay,
+            Jasmine. Pakai tombol <strong>← →</strong> di keyboard untuk berpindah slide.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TEORI ==================== -->
+  <section class="panel" id="panel-teori" role="tabpanel">
+    <div class="theory-grid">
+      <div class="card">
+        <h3><span class="num">A</span> Prinsip kerja</h3>
+        <p>
+          Pipa pitot adalah tabung yang dipasang <strong>menghadap arah aliran</strong>. Di mulut
+          tabung terdapat <strong>titik stagnasi</strong>: fluida tepat berhenti (v = 0) sehingga
+          seluruh energi kinetiknya berubah menjadi tekanan.
+        </p>
+        <p>
+          Tekanan di titik stagnasi (<span class="mono">p₀</span>) lebih besar daripada tekanan
+          statis aliran di sekitarnya (<span class="mono">p</span>). Selisih keduanya, yang diukur
+          manometer, hanya bergantung pada massa jenis fluida dan kelajuannya.
+        </p>
+        <ol class="steps" style="margin-top:14px">
+          <li>Fluida mengalir dengan kelajuan <span class="mono">v</span>.</li>
+          <li>Mulut tabung menghadap aliran → fluida berhenti → tekanan naik menjadi <span class="mono">p₀</span>.</li>
+          <li>Manometer membandingkan <span class="mono">p₀</span> dengan <span class="mono">p</span>.</li>
+          <li>Zat cair manometer terdorong, membentuk selisih tinggi <span class="mono">h</span>.</li>
+          <li>Kelajuan aliran dihitung dari <span class="mono">h</span>.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">B</span> Penurunan rumus</h3>
+        <p>Terapkan persamaan Bernoulli pada titik 1 (aliran) dan titik 2 (stagnasi):</p>
+        <div class="formula-card" style="margin:10px 0">
+          <div class="eq" style="font-size:19px">p₁ + ½ρv₁² = p₂ + ½ρv₂²</div>
+        </div>
+        <p>
+          Kedua titik berada pada ketinggian sama dan di titik stagnasi <span class="mono">v₂ = 0</span>, sehingga:
+        </p>
+        <div class="formula-card" style="margin:10px 0">
+          <div class="eq" style="font-size:19px">p₂ − p₁ = ½ρv₁²</div>
+        </div>
+        <p>
+          Manometer mengukur selisih tekanan sebagai kolom zat cair setinggi <span class="mono">h</span>:
+          <span class="mono">p₂ − p₁ = ρ′gh</span>. Maka:
+        </p>
+        <div class="formula-card" style="margin:10px 0">
+          <div class="eq">v = √<span class="frac"><span>2 ρ′ g h</span><span>ρ</span></span></div>
+        </div>
+        <p class="formula-note" style="text-align:center;margin:8px 0 0">
+          ρ′ = massa jenis zat cair manometer, ρ = massa jenis fluida yang mengalir
+        </p>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">C</span> Besaran dan satuan</h3>
+        <div class="varlist">
+          <div><b>v</b><span>kelajuan aliran fluida (m/s)</span></div>
+          <div><b>g</b><span>percepatan gravitasi, 9,81 m/s²</span></div>
+          <div><b>h</b><span>selisih tinggi zat cair manometer (m)</span></div>
+          <div><b>ρ</b><span>massa jenis fluida yang mengalir (kg/m³)</span></div>
+          <div><b>ρ′</b><span>massa jenis zat cair manometer (kg/m³)</span></div>
+        </div>
+        <p style="margin-top:12px">
+          Nilai massa jenis yang sering dipakai: udara ± 1,2 kg/m³, air 1.000 kg/m³,
+          alkohol ± 790 kg/m³, raksa 13.600 kg/m³.
+        </p>
+        <p>
+          Karena <span class="mono">h</span> berbanding lurus dengan <span class="mono">v²</span>,
+          menggandakan kelajuan membuat tinggi manometer menjadi <strong>empat kali</strong>.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">D</span> Contoh soal</h3>
+        <p>
+          Udara (<span class="mono">ρ = 1,2 kg/m³</span>) mengalir dalam pipa. Manometer berisi air
+          (<span class="mono">ρ′ = 1.000 kg/m³</span>) menunjukkan selisih tinggi
+          <span class="mono">h = 3 cm</span>. Berapa kelajuan udara? (<span class="mono">g = 9,8 m/s²</span>)
+        </p>
+        <details class="example">
+          <summary>Lihat langkah penyelesaian</summary>
+          <div class="body">
+            <p><strong>1.</strong> Ubah satuan: <span class="mono">h = 0,03 m</span>.</p>
+            <p><strong>2.</strong> Masukkan ke rumus:</p>
+            <p class="mono" style="text-align:center;font-size:16px;color:#12305e">
+              v = √(2 · 1.000 · 9,8 · 0,03 / 1,2)
+            </p>
+            <p class="mono" style="text-align:center;font-size:16px;color:#12305e">
+              v = √(588 / 1,2) = √490
+            </p>
+            <p><strong>3.</strong> Hasil: <strong>v ≈ 22,1 m/s</strong>.</p>
+            <p style="margin-bottom:0">
+              Perhatikan: ρ′ (air) lebih besar daripada ρ (udara). Karena itu h cukup kecil untuk
+              kelajuan yang besar — inilah sebabnya manometer air dipakai untuk aliran gas.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">E</span> Kesalahan umum</h3>
+        <ul class="warn-list">
+          <li>Tertukar antara <span class="mono">ρ</span> (fluida yang mengalir) dan <span class="mono">ρ′</span> (zat cair manometer).</li>
+          <li>Lupa mengubah <span class="mono">h</span> dari cm/mm ke meter.</li>
+          <li>Menganggap <span class="mono">h</span> sebanding dengan <span class="mono">v</span>, padahal sebanding dengan <span class="mono">v²</span>.</li>
+          <li>Mengira tekanan stagnasi sama dengan tekanan statis — bedanya justru yang diukur.</li>
+          <li>Memakai pipa pitot dengan mulut tidak menghadap aliran sehingga titik stagnasi tidak terbentuk.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">F</span> Penerapan sehari-hari</h3>
+        <ul>
+          <li><strong>Pesawat terbang</strong> — indikator kelajuan udara (airspeed indicator) membandingkan tekanan pitot dan tekanan statis.</li>
+          <li><strong>Kapal laut</strong> — mengukur kecepatan kapal relatif terhadap air.</li>
+          <li><strong>Terowongan angin</strong> — mengukur kelajuan aliran udara pada pengujian model.</li>
+          <li><strong>Industri</strong> — mengukur laju gas pada cerobong dan saluran udara.</li>
+          <li><strong>Balap mobil</strong> — tabung pitot mengukur kecepatan aliran udara untuk pengaturan aerodinamika.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== ANALISIS ==================== -->
+  <section class="panel" id="panel-analisis" role="tabpanel">
+    <div class="analysis-grid">
+      <div class="card">
+        <h3><span class="num">1</span> Tabel data pengukuran</h3>
+        <div class="btn-row">
+          <button class="btn primary" id="recordBtn">＋ Catat data saat ini</button>
+          <button class="btn" id="csvBtn">Unduh CSV</button>
+          <button class="btn ghost" id="clearBtn">Hapus semua</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>v (m/s)</th>
+                <th>v² (m²/s²)</th>
+                <th>h (mm)</th>
+                <th>Δp (Pa)</th>
+              </tr>
+            </thead>
+            <tbody id="dataBody"></tbody>
+          </table>
+        </div>
+        <p class="hint">
+          Atur kelajuan pada tab Simulasi, lalu tekan <em>Catat data</em>. Ulangi untuk beberapa
+          nilai v agar pola <strong>h ∝ v²</strong> terlihat pada grafik.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3><span class="num">2</span> Grafik h terhadap v²</h3>
+        <div class="stage chart"><canvas id="chartCanvas"></canvas></div>
+        <div class="slope-box">
+          <div class="slope-item">
+            <span>Kemiringan data</span>
+            <strong id="slopeData">—</strong>
+          </div>
+          <div class="slope-item">
+            <span>Kemiringan teori</span>
+            <strong id="slopeTheory">—</strong>
+          </div>
+        </div>
+        <p class="hint" id="slopeNote">
+          Jika titik-titik data membentuk garis lurus melalui titik asal, maka h berbanding lurus
+          dengan v² — sesuai persamaan <span class="mono">h = ρv² / (2ρ′g)</span>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== LATIHAN ==================== -->
+  <section class="panel" id="panel-latihan" role="tabpanel">
+    <div class="quiz-head">
+      <div>
+        <strong style="font-size:15px">Uji pemahaman</strong>
+        <p style="margin:4px 0 0;color:var(--muted);font-size:13px">
+          Pilih satu jawaban. Pembahasan muncul setelah menjawab.
+        </p>
+      </div>
+      <div class="score-pill" id="scorePill">Skor 0 / 6</div>
+    </div>
+
+    <div class="quiz-list" id="quizList"></div>
+
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn" id="resetQuiz">Ulangi latihan</button>
+    </div>
+  </section>
+
+  <footer>
+    Lab Virtual Pipa Pitot — media pembelajaran fisika kelas XI (fluida dinamis).
+    Model menganggap fluida ideal: tunak, tak termampatkan, dan tanpa gesekan.
+    Skala tinggi <em>h</em> pada gambar diperbesar agar mudah diamati; nilai sebenarnya
+    tertera pada label dan panel hasil.
+  </footer>
+</main>
+
+<script>
+'use strict';
+
+/* ============================================================================
+   0. UTILITAS
+   ========================================================================== */
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+const _nf = new Map();
+function fmt(n, digits = 2) {
+  if (!isFinite(n)) return '—';
+  if (!_nf.has(digits)) {
+    _nf.set(digits, new Intl.NumberFormat('id-ID', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    }));
+  }
+  return _nf.get(digits).format(n);
+}
+
+/** Tinggi dalam satuan yang paling masuk akal. */
+function fmtHeight(m) {
+  if (!isFinite(m)) return '—';
+  if (Math.abs(m) < 0.05) return fmt(m * 1000, Math.abs(m) < 0.005 ? 2 : 1) + ' mm';
+  return fmt(m * 100, 2) + ' cm';
+}
+
+/** Tekanan dalam Pa atau kPa. */
+function fmtPressure(pa) {
+  if (!isFinite(pa)) return '—';
+  if (Math.abs(pa) >= 1000) return fmt(pa / 1000, 2) + ' kPa';
+  return fmt(pa, 1) + ' Pa';
+}
+
+/** Massa jenis: presisi menyesuaikan besarannya (helium butuh 3 desimal). */
+function fmtRho(rho) {
+  return fmt(rho, rho < 1 ? 3 : rho < 10 ? 2 : 0);
+}
+
+/* ============================================================================
+   1. INTI FISIKA (fungsi murni)
+   ========================================================================== */
+
+/* PHYSICS-CORE-START */
+
+/** Tekanan dinamis q = ½ρv². */
+function dynamicPressure(rho, v) {
+  return 0.5 * rho * v * v;
+}
+
+/** Selisih tinggi manometer: h = Δp / (ρ′g). */
+function manometerHeight(dp, rhoLiquid, g) {
+  return dp / (rhoLiquid * g);
+}
+
+/** Kelajuan hasil pengukuran: v = √(2ρ′gh/ρ). */
+function velocityFromHeight(h, rho, rhoLiquid, g) {
+  return Math.sqrt((2 * rhoLiquid * g * h) / rho);
+}
+
+/** Kemiringan teori grafik h (mm) terhadap v²: 1000ρ / (2ρ′g). */
+function slopeTheory(rho, rhoLiquid, g) {
+  return (1000 * rho) / (2 * rhoLiquid * g);
+}
+
+/* PHYSICS-CORE-END */
+
+/* ============================================================================
+   2. DATA FLUIDA
+   ========================================================================== */
+
+const FLUIDS = [
+  { id: 'udara', name: 'Udara (20 °C)', rho: 1.204, kind: 'gas' },
+  { id: 'co2', name: 'Gas CO₂', rho: 1.842, kind: 'gas' },
+  { id: 'helium', name: 'Helium', rho: 0.1786, kind: 'gas' },
+  { id: 'air', name: 'Air', rho: 998, kind: 'cair' },
+  { id: 'oli', name: 'Oli mesin', rho: 880, kind: 'cair' }
+];
+
+const LIQUIDS = [
+  { id: 'air', name: 'Air', rho: 1000, color: '#38bdf8', dark: '#0284c7' },
+  { id: 'alkohol', name: 'Alkohol', rho: 789, color: '#fbbf24', dark: '#d97706' },
+  { id: 'minyak', name: 'Minyak', rho: 800, color: '#facc15', dark: '#ca8a04' },
+  { id: 'raksa', name: 'Raksa (Hg)', rho: 13600, color: '#94a3b8', dark: '#475569' }
+];
+
+const S = { fluidId: 'udara', liquidId: 'air', v: 15, g: 9.81 };
+
+const fluid = () => FLUIDS.find((f) => f.id === S.fluidId) || FLUIDS[0];
+const liquid = () => LIQUIDS.find((l) => l.id === S.liquidId) || LIQUIDS[0];
+
+function readings() {
+  const f = fluid(), l = liquid();
+  const dp = dynamicPressure(f.rho, S.v);
+  const h = manometerHeight(dp, l.rho, S.g);
+  const vm = velocityFromHeight(h, f.rho, l.rho, S.g);
+  return { dp, h, vm, rho: f.rho, rhoL: l.rho };
+}
+
+/* ============================================================================
+   3. KANVAS
+   ========================================================================== */
+
+function setupCanvas(canvas, onResize) {
+  const ctx = canvas.getContext('2d');
+  const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
+
+  function size() {
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(2, Math.round(rect.width));
+    const h = Math.max(2, Math.round(rect.height));
+    if (canvas._w === w && canvas._h === h && canvas._d === dpr()) return false;
+    canvas._w = w;
+    canvas._h = h;
+    canvas._d = dpr();
+    canvas.width = Math.round(w * canvas._d);
+    canvas.height = Math.round(h * canvas._d);
+    ctx.setTransform(canvas._d, 0, 0, canvas._d, 0, 0);
+    return true;
+  }
+
+  function resize() {
+    size();
+    if (onResize) onResize();
+  }
+
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
+  window.addEventListener('resize', resize);
+  size();
+  requestAnimationFrame(resize);
+
+  return {
+    ctx,
+    canvas,
+    resize,
+    get w() { return canvas._w || 2; },
+    get h() { return canvas._h || 2; }
+  };
+}
+
+/* ============================================================================
+   4. TAB
+   ========================================================================== */
+
+const TABS = ['simulasi', 'materi', 'teori', 'analisis', 'latihan'];
+let activeTab = 'simulasi';
+
+function showTab(name) {
+  if (!TABS.includes(name)) return;
+  activeTab = name;
+  TABS.forEach((t) => {
+    $('#panel-' + t).classList.toggle('on', t === name);
+  });
+  $$('.tab').forEach((b) => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+
+  if (name === 'simulasi') {
+    requestAnimationFrame(() => drawScene(0.016));
+  }
+  if (name === 'analisis') {
+    requestAnimationFrame(() => {
+      chart.resize();
+      drawChart();
+    });
+  }
+}
+
+$$('.tab').forEach((btn) => {
+  btn.addEventListener('click', () => showTab(btn.dataset.tab));
+});
+
+/* ============================================================================
+   4b. MATERI — slide viewer (diadaptasi dari presentasi Kelompok 3)
+   ========================================================================== */
+
+const SLIDES = [
+  {
+    short: 'Judul',
+    kicker: 'Presentasi Kelompok 3',
+    title: 'PIPA PITOT',
+    cover: true,
+    html: '<p class="cover-sub">Zihan · Alike · Aay · Jasmine</p>' +
+      '<p class="cover-sub" style="font-size:.78em;margin-top:.7em">Fisika Kelas XI · Fluida Dinamis</p>'
+  },
+  {
+    short: 'Pengertian',
+    kicker: '01 · Pengertian',
+    title: 'Apa itu pipa pitot?',
+    html: '<p>Pipa pitot (tabung pitot) adalah alat ukur yang digunakan untuk menentukan ' +
+      'kecepatan aliran fluida, baik cair maupun gas. Alat ini juga dipakai pada pesawat ' +
+      'terbang untuk mengukur kecepatan udara (<em>airspeed</em>).</p>'
+  },
+  {
+    short: 'Fungsi',
+    kicker: '02 · Fungsi',
+    title: 'Fungsi pipa pitot',
+    html: '<ul>' +
+      '<li>Mengukur kecepatan pesawat terbang</li>' +
+      '<li>Mengukur kelajuan aliran gas atau udara di industri</li>' +
+      '<li>Pengukuran dalam meteorologi</li>' +
+      '<li>Pengujian kelajuan aliran air</li>' +
+      '</ul>'
+  },
+  {
+    short: 'Cara penggunaan',
+    kicker: '03 · Cara penggunaan',
+    title: 'Cara penggunaan',
+    html: '<ul>' +
+      '<li><strong>Lubang utama (stagnasi):</strong> terletak di ujung depan pipa yang menghadap ' +
+      'langsung ke arah aliran fluida. Lubang ini menangkap tekanan total ' +
+      '(<em>stagnation pressure</em>) karena kecepatan fluida di titik tersebut berhenti sesaat.</li>' +
+      '<li><strong>Lubang samping:</strong> terletak di bagian dinding pipa untuk mengukur ' +
+      'tekanan statis (<em>static pressure</em>).</li>' +
+      '<li><strong>Manometer:</strong> kedua lubang dihubungkan ke alat pengukur beda tekanan ' +
+      'atau pipa U berisi cairan (raksa atau alkohol). Selisih tinggi cairan mencerminkan ' +
+      'perbedaan tekanan yang dipakai menghitung kecepatan aliran.</li>' +
+      '</ul>'
+  },
+  {
+    short: 'Rumus',
+    kicker: '04 · Rumus',
+    title: 'Rumus',
+    html: '<p>Selisih tekanan stagnasi dan tekanan statis:</p>' +
+      '<div class="formula-line">Δp = p₀ − p = ½ ρ v²</div>' +
+      '<p>Sehingga kelajuan aliran adalah:</p>' +
+      '<div class="formula-line">v = √(2 Δp / ρ)</div>' +
+      '<p class="mini-note">ρ = massa jenis fluida (kg/m³) · Δp = selisih tekanan (Pa)</p>' +
+      '<p class="mini-note" style="margin-top:.5em">Pada manometer: Δp = ρ′ g h → v = √(2 ρ′ g h / ρ)</p>'
+  },
+  {
+    short: 'Contoh soal',
+    kicker: '05 · Contoh soal',
+    title: 'Contoh soal',
+    html: '<p>Sebuah pipa pitot digunakan untuk mengukur kecepatan udara. Diketahui:</p>' +
+      '<ul>' +
+      '<li>Tekanan stagnasi = 1.500 Pa</li>' +
+      '<li>Tekanan statis = 900 Pa</li>' +
+      '<li>Massa jenis udara = 1,2 kg/m³</li>' +
+      '</ul>' +
+      '<p>Berapakah kecepatan udara tersebut?</p>'
+  },
+  {
+    short: 'Pembahasan',
+    kicker: '06 · Pembahasan',
+    title: 'Pembahasan',
+    html: '<ul>' +
+      '<li>Δp = 1.500 − 900 = <strong>600 Pa</strong></li>' +
+      '<li>v = √(2 × 600 / 1,2) = √1.000</li>' +
+      '<li>v ≈ <strong>31,62 m/s</strong></li>' +
+      '</ul>' +
+      '<p class="result-chip">Kecepatan udara ≈ 31,62 m/s</p>' +
+      '<button class="btn" data-sim-example="1">Coba di simulasi →</button>'
+  },
+  {
+    short: 'Penutup',
+    kicker: '07 · Penutup',
+    title: 'Thank you',
+    cover: true,
+    html: '<p class="cover-sub">Kelompok 3 — Zihan, Alike, Aay, Jasmine</p>'
+  }
+];
+
+let slideIdx = 0;
+
+function renderSlide() {
+  const s = SLIDES[slideIdx];
+  const body = $('#slideBody');
+
+  body.className = 'slide-body' + (s.cover ? ' cover' : '');
+  body.innerHTML =
+    '<div class="slide-kicker">' + s.kicker + '</div>' +
+    '<h2 class="' + (s.cover ? 'slide-cover-title' : 'slide-title') + '">' + s.title + '</h2>' +
+    '<div class="slide-text">' + s.html + '</div>';
+
+  $('#slideCount').textContent = (slideIdx + 1) + ' / ' + SLIDES.length;
+  $('#slidePrev').disabled = slideIdx === 0;
+  $('#slideNext').disabled = slideIdx === SLIDES.length - 1;
+
+  $$('.slide-item').forEach((b, i) => b.classList.toggle('on', i === slideIdx));
+}
+
+function goSlide(delta) {
+  const next = clamp(slideIdx + delta, 0, SLIDES.length - 1);
+  if (next === slideIdx) return;
+  slideIdx = next;
+  renderSlide();
+}
+
+$('#slideList').innerHTML = SLIDES.map((s, i) =>
+  '<button class="slide-item" data-slide="' + i + '">' +
+    '<span class="n">' + (i + 1) + '</span><span>' + s.short + '</span>' +
+  '</button>'
+).join('');
+
+$('#slidePrev').addEventListener('click', () => goSlide(-1));
+$('#slideNext').addEventListener('click', () => goSlide(1));
+
+$('#slideList').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-slide]');
+  if (!btn) return;
+  slideIdx = parseInt(btn.dataset.slide, 10);
+  renderSlide();
+});
+
+// tombol "Coba di simulasi" pada slide pembahasan
+$('#slideBody').addEventListener('click', (e) => {
+  if (!e.target.closest('[data-sim-example]')) return;
+
+  S.fluidId = 'udara';
+  S.liquidId = 'air';
+  S.v = 31.6;
+  fluidSel.value = 'udara';
+  liquidSel.value = 'air';
+  applyFluidMax();
+  vRange.value = String(S.v);
+  refresh();
+  showTab('simulasi');
+});
+
+document.addEventListener('keydown', (e) => {
+  if (activeTab !== 'materi') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); goSlide(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goSlide(-1); }
+});
+
+renderSlide();
+
+/* ============================================================================
+   5. GEOMETRI & PARTIKEL ADEGAN
+   ========================================================================== */
+
+const scene = setupCanvas($('#sceneCanvas'), () => drawScene(0.016));
+
+const particles = [];
+for (let i = 0; i < 64; i++) {
+  particles.push({
+    x: Math.random(),
+    y: Math.random(),
+    k: 0.65 + Math.random() * 0.7,
+    len: 5 + Math.random() * 12,
+    alpha: 0.18 + Math.random() * 0.35
+  });
+}
+
+let geo = null;
+
+function computeGeo() {
+  const w = scene.w, h = scene.h;
+  const x0 = 20;
+  const x1 = Math.max(x0 + 120, w - 22);
+  const range = x1 - x0;
+
+  const yTop = Math.max(52, h * 0.16);
+  const yBot = Math.max(yTop + 78, Math.min(h * 0.46, h - 162));
+
+  const probeX = x0 + range * 0.6;
+  const staticX = x0 + range * 0.26;
+  const tipX = probeX - Math.min(46, range * 0.13);
+  const tipY = (yTop + yBot) / 2;
+
+  const manTop = yBot + 7;
+  const botY = h - 32;
+
+  return {
+    w, h, x0, x1, range, yTop, yBot, tipX, tipY, probeX, staticX, manTop, botY,
+    pipeH: yBot - yTop,
+    yZero: manTop + (botY - manTop) * 0.5,
+    limbH: botY - manTop
+  };
+}
+
+/** Simpangan vertikal garis arus karena adanya titik stagnasi. */
+function deflect(x, baseY, G) {
+  const dx = x - G.tipX;
+  const infl = clamp(1 - Math.abs(dx + 34) / 150, 0, 1);
+  if (infl <= 0) return 0;
+  const dir = baseY < G.tipY ? -1 : 1;
+  const amp = Math.min(30, G.pipeH * 0.3);
+  return dir * Math.pow(infl, 1.45) * amp;
+}
+
+/* ============================================================================
+   6. GAMBAR ADEGAN
+   ========================================================================== */
+
+let dispH = 0;     // tinggi manometer yang ditampilkan (animasi halus)
+let lastFrame = performance.now();
+
+function drawScene(dt) {
+  const ctx = scene.ctx, w = scene.w, h = scene.h;
+  if (w < 5 || h < 5) return;
+
+  const G = computeGeo();
+  geo = G;
+  const R = readings();
+  const f = fluid(), l = liquid();
+
+  // ---- latar
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+  bgGrad.addColorStop(0, '#fbfdff');
+  bgGrad.addColorStop(1, '#eef5ff');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // ---- isi pipa
+  const pipeGrad = ctx.createLinearGradient(0, G.yTop, 0, G.yBot);
+  pipeGrad.addColorStop(0, 'rgba(56,189,248,.10)');
+  pipeGrad.addColorStop(0.5, 'rgba(56,189,248,.04)');
+  pipeGrad.addColorStop(1, 'rgba(56,189,248,.12)');
+  ctx.fillStyle = pipeGrad;
+  ctx.fillRect(G.x0, G.yTop, G.range, G.pipeH);
+
+  // ---- partikel aliran
+  drawParticles(ctx, G, dt);
+
+  // ---- garis arus
+  drawStreamlines(ctx, G);
+
+  // ---- garis stagnasi (sumbu aliran)
+  drawStagnationLine(ctx, G);
+
+  // ---- dinding pipa
+  ctx.fillStyle = '#c3d6ee';
+  ctx.fillRect(G.x0, G.yTop - 8, G.range, 8);
+  ctx.fillRect(G.x0, G.yBot, G.staticX - 7 - G.x0, 8);
+  ctx.fillRect(G.staticX + 7, G.yBot, G.x1 - G.staticX - 7, 8);
+  ctx.fillStyle = 'rgba(255,255,255,.45)';
+  ctx.fillRect(G.x0, G.yTop - 8, G.range, 2);
+
+  // ---- tabung pitot
+  drawProbe(ctx, G);
+
+  // ---- manometer
+  drawManometer(ctx, G, l, R, dt);
+
+  // ---- label
+  drawLabels(ctx, G, f, l, R);
+}
+
+function drawParticles(ctx, G, dt) {
+  const speed = S.v * 6.5;
+  const pipePad = 10;
+
+  ctx.lineCap = 'round';
+  for (const p of particles) {
+    if (speed > 0) {
+      p.x += (speed * p.k * dt) / G.range;
+      if (p.x > 1.02) {
+        p.x = -0.02;
+        p.y = Math.random();
+      }
+    }
+
+    const bx = G.x0 + p.x * G.range;
+    if (bx < G.x0 - 10 || bx > G.x1 + 10) continue;
+
+    const baseY = G.yTop + pipePad + p.y * (G.pipeH - pipePad * 2);
+    const y = clamp(baseY + deflect(bx, baseY, G), G.yTop + 5, G.yBot - 5);
+    const len = p.len * (0.55 + Math.min(1.4, S.v / 26));
+
+    ctx.strokeStyle = 'rgba(37,99,235,' + (p.alpha * 1.5).toFixed(2) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bx - len, y);
+    ctx.lineTo(bx, y);
+    ctx.stroke();
+  }
+}
+
+function drawStreamlines(ctx, G) {
+  const fracs = [0.22, 0.36, 0.5, 0.64, 0.78];
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(59,130,246,.16)';
+
+  for (const fr of fracs) {
+    if (fr === 0.5) continue;
+    const baseY = G.yTop + fr * G.pipeH;
+    ctx.beginPath();
+    for (let x = G.x0 + 4; x <= G.x1 - 4; x += 6) {
+      const y = baseY + deflect(x, baseY, G);
+      if (x === G.x0 + 4) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawStagnationLine(ctx, G) {
+  const sx = G.tipX - 11;
+
+  ctx.save();
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(220,38,38,.45)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(G.x0 + 4, G.tipY);
+  ctx.lineTo(sx - 5, G.tipY);
+  ctx.stroke();
+  ctx.restore();
+
+  // titik stagnasi
+  ctx.beginPath();
+  ctx.arc(sx, G.tipY, 8, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(220,38,38,.14)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(sx, G.tipY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#dc2626';
+  ctx.fill();
+}
+
+function drawProbe(ctx, G) {
+  const stemW = 13;
+
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'butt';
+
+  // tabung luar
+  ctx.strokeStyle = '#93aac9';
+  ctx.lineWidth = stemW + 5;
+  ctx.beginPath();
+  ctx.moveTo(G.probeX, G.botY - 4);
+  ctx.lineTo(G.probeX, G.tipY);
+  ctx.lineTo(G.tipX + 7, G.tipY);
+  ctx.stroke();
+
+  // rongga dalam
+  ctx.strokeStyle = '#f6faff';
+  ctx.lineWidth = stemW - 5;
+  ctx.beginPath();
+  ctx.moveTo(G.probeX, G.botY - 4);
+  ctx.lineTo(G.probeX, G.tipY);
+  ctx.lineTo(G.tipX + 7, G.tipY);
+  ctx.stroke();
+
+  // mulut tabung (bukaan menghadap aliran)
+  ctx.beginPath();
+  ctx.arc(G.tipX + 5, G.tipY, 6.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#7d93b2';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(G.tipX + 5, G.tipY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#2c4160';
+  ctx.fill();
+
+  // flange tempat tabung menembus dinding
+  ctx.fillStyle = '#b7cae6';
+  ctx.fillRect(G.probeX - 15, G.yBot - 6, 30, 11);
+  ctx.fillStyle = '#dbe7f7';
+  ctx.fillRect(G.probeX - 11, G.yBot - 4, 22, 4);
+
+  ctx.restore();
+}
+
+function drawManometer(ctx, G, l, R, dt) {
+  const tw = 13;
+
+  // skala: h penuh ketika slider berada di nilai maksimum
+  const vMax = parseFloat($('#vRange').max) || 30;
+  const hMax = Math.max(1e-6, manometerHeight(dynamicPressure(R.rho, vMax), R.rhoL, S.g));
+  const hPx = clamp(R.h / hMax, 0, 1.02) * G.limbH * 0.72;
+
+  // animasi halus
+  dispH += (hPx - dispH) * Math.min(1, Math.max(0.08, dt * 7));
+  if (Math.abs(hPx - dispH) < 0.15) dispH = hPx;
+
+  const yL = G.yZero - dispH / 2;
+  const yR = G.yZero + dispH / 2;
+
+  ctx.save();
+
+  // ------- kaca tabung
+  const drawTube = (path) => {
+    path();
+    ctx.fillStyle = '#e9f2fd';
+    ctx.fill();
+    ctx.strokeStyle = '#9cbade';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  };
+
+  drawTube(() => rr(ctx, G.staticX - tw / 2, G.manTop, tw, G.botY - G.manTop, 6));
+  drawTube(() => rr(ctx, G.probeX - tw / 2, G.manTop, tw, G.botY - G.manTop, 6));
+  drawTube(() => rr(ctx, G.staticX - tw / 2, G.botY - tw, (G.probeX - G.staticX) + tw, tw, 6));
+
+  // ------- zat cair manometer
+  ctx.fillStyle = l.color;
+  ctx.fillRect(G.staticX - tw / 2 + 2, yL, tw - 4, G.botY - yL - 2);
+  ctx.fillRect(G.probeX - tw / 2 + 2, yR, tw - 4, G.botY - yR - 2);
+  ctx.fillRect(G.staticX - tw / 2 + 2, G.botY - tw + 2, (G.probeX - G.staticX) + tw - 4, tw - 4);
+
+  // pantulan pada kolom
+  ctx.fillStyle = 'rgba(255,255,255,.35)';
+  ctx.fillRect(G.staticX - tw / 2 + 3, yL + 2, 2, Math.max(0, G.botY - yL - 6));
+  ctx.fillRect(G.probeX - tw / 2 + 3, yR + 2, 2, Math.max(0, G.botY - yR - 6));
+
+  // meniskus
+  ctx.strokeStyle = l.dark;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(G.staticX - tw / 2 + 1, yL);
+  ctx.lineTo(G.staticX + tw / 2 - 1, yL);
+  ctx.moveTo(G.probeX - tw / 2 + 1, yR);
+  ctx.lineTo(G.probeX + tw / 2 - 1, yR);
+  ctx.stroke();
+
+  // skala pada kolom kiri
+  ctx.strokeStyle = 'rgba(71,85,105,.3)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const ty = G.manTop + (G.limbH * i) / 4;
+    ctx.beginPath();
+    ctx.moveTo(G.staticX - tw / 2 - 7, ty);
+    ctx.lineTo(G.staticX - tw / 2 - 2, ty);
+    ctx.stroke();
+  }
+
+  // ------- penunjuk h
+  const bx = Math.min(G.probeX + 34, G.w - 22);
+
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = 'rgba(15,118,110,.28)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(G.probeX + tw / 2 + 1, yL);
+  ctx.lineTo(bx, yL);
+  ctx.moveTo(G.probeX + tw / 2 + 1, yR);
+  ctx.lineTo(bx, yR);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = '#0f766e';
+  ctx.fillStyle = '#0f766e';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(bx, yL);
+  ctx.lineTo(bx, yR);
+  ctx.stroke();
+
+  [[yL, 7], [yR, -7]].forEach(([yy, off]) => {
+    ctx.beginPath();
+    ctx.moveTo(bx, yy);
+    ctx.lineTo(bx - 4, yy + off);
+    ctx.lineTo(bx + 4, yy + off);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  const txt = 'h = ' + fmtHeight(R.h);
+  ctx.font = '700 11.5px "Segoe UI", system-ui, sans-serif';
+  const tw2 = ctx.measureText(txt).width;
+  let tx = bx + 9;
+  let align = 'left';
+  if (tx + tw2 > G.w - 8) {
+    tx = bx - 9;
+    align = 'right';
+  }
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(txt, tx, (yL + yR) / 2);
+
+  ctx.restore();
+
+  // keterangan
+  labelText(ctx, 'manometer · ' + l.name.toLowerCase(),
+    (G.staticX + G.probeX) / 2, G.botY + 15, '#64748b', 10.5);
+}
+
+function drawLabels(ctx, G, f, l, R) {
+  const narrow = G.w < 560;
+
+  // arah aliran
+  ctx.save();
+  ctx.strokeStyle = 'rgba(30,64,175,.75)';
+  ctx.fillStyle = 'rgba(30,64,175,.75)';
+  ctx.lineWidth = 2;
+  const ay = G.yTop - 24;
+  ctx.beginPath();
+  ctx.moveTo(G.x0 + 4, ay);
+  ctx.lineTo(G.x0 + 40, ay);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(G.x0 + 40, ay);
+  ctx.lineTo(G.x0 + 32, ay - 5);
+  ctx.lineTo(G.x0 + 32, ay + 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  labelText(ctx, 'aliran fluida', G.x0 + 48, ay, 'rgba(30,64,175,.85)', 11, 'left');
+
+  // p pada lubang statis
+  labelText(ctx, 'p (statis)', G.staticX - 10, G.yBot - 17, '#475569', 10.5, 'right');
+
+  // p0 pada mulut tabung
+  labelText(ctx, 'p₀ (stagnasi)', G.tipX - 18, G.tipY - 25, '#b91c1c', 10.5, 'right');
+
+  if (!narrow) {
+    labelText(ctx, 'tabung pitot', G.probeX + 14, G.yTop - 24, '#475569', 10.5, 'left');
+  }
+
+  // kecepatan aliran
+  if (S.v > 0.05) {
+    labelText(ctx, 'v = ' + fmt(S.v, 1) + ' m/s', G.x0 + 20, G.yTop + 19, 'rgba(30,64,175,.9)', 12, 'left', 800);
+  } else {
+    labelText(ctx, 'v = 0 (fluida diam)', G.x0 + 20, G.yTop + 19, 'rgba(100,116,139,.9)', 12, 'left');
+  }
+
+  // keterangan fluida
+  labelText(ctx, f.name + ' · ρ = ' + fmtRho(f.rho) + ' kg/m³',
+    G.w - 12, 16, '#64748b', 10.5, 'right');
+}
+
+function labelText(ctx, text, x, y, color, size, align, weight) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = (weight || 600) + ' ' + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function rr(ctx, x, y, w, h, r) {
+  const rad = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rad);
+  ctx.arcTo(x + w, y + h, x, y + h, rad);
+  ctx.arcTo(x, y + h, x, y, rad);
+  ctx.arcTo(x, y, x + w, y, rad);
+  ctx.closePath();
+}
+
+/* ============================================================================
+   7. PANEL HASIL
+   ========================================================================== */
+
+function updateReadouts() {
+  const R = readings();
+  const f = fluid(), l = liquid();
+
+  $('#vValue').textContent = fmt(S.v, 1) + ' m/s';
+  $('#dpOut').textContent = fmtPressure(R.dp);
+  $('#hOut').textContent = fmtHeight(R.h);
+  $('#vmOut').textContent = fmt(R.vm, 2) + ' m/s';
+  $('#rhoOut').textContent = fmtRho(f.rho) + ' kg/m³';
+
+  const box = $('#verifyBox');
+  if (S.v < 0.05) {
+    box.textContent = 'Fluida diam — tidak ada tekanan dinamis, permukaan manometer sama tinggi.';
+    box.style.background = '#f4f7fd';
+    box.style.borderColor = '#dbe6f7';
+    box.style.color = '#475569';
+  } else if (Math.abs(R.vm - S.v) < 0.005) {
+    box.textContent = '✓ Cocok — v hasil ukur = v yang diatur (' + fmt(R.vm, 2) + ' m/s), dibaca dari h = ' + fmtHeight(R.h) + '.';
+    box.style.background = '#ecfdf5';
+    box.style.borderColor = '#bbf0dd';
+    box.style.color = '#0f766e';
+  } else {
+    box.textContent = 'Kelajuan hasil ukur ' + fmt(R.vm, 2) + ' m/s.';
+    box.style.background = '#f4f7fd';
+    box.style.borderColor = '#dbe6f7';
+    box.style.color = '#475569';
+  }
+}
+
+function refresh() {
+  updateReadouts();
+  drawScene(0.016);
+  if (activeTab === 'analisis') drawChart();
+}
+
+/* ============================================================================
+   8. KONTROL
+   ========================================================================== */
+
+const vRange = $('#vRange');
+const fluidSel = $('#fluidSel');
+const liquidSel = $('#liquidSel');
+
+fluidSel.innerHTML = FLUIDS.map((f) =>
+  '<option value="' + f.id + '">' + f.name + ' — ' + fmtRho(f.rho) + ' kg/m³</option>'
+).join('');
+
+liquidSel.innerHTML = LIQUIDS.map((l) =>
+  '<option value="' + l.id + '">' + l.name + ' — ' + fmt(l.rho, 0) + ' kg/m³</option>'
+).join('');
+
+fluidSel.value = S.fluidId;
+liquidSel.value = S.liquidId;
+
+function applyFluidMax() {
+  const isGas = fluid().kind === 'gas';
+  const max = isGas ? 35 : 8;
+  vRange.max = String(max);
+  vRange.step = '0.1';
+  if (S.v > max) {
+    S.v = max;
+    vRange.value = String(S.v);
+  }
+}
+
+vRange.addEventListener('input', () => {
+  S.v = parseFloat(vRange.value);
+  refresh();
+});
+
+fluidSel.addEventListener('change', () => {
+  S.fluidId = fluidSel.value;
+  applyFluidMax();
+  refresh();
+});
+
+liquidSel.addEventListener('change', () => {
+  S.liquidId = liquidSel.value;
+  refresh();
+});
+
+$$('.preset').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const preset = btn.dataset.preset;
+    if (preset === 'udara-air') { S.fluidId = 'udara'; S.liquidId = 'air'; S.v = 18; }
+    if (preset === 'udara-raksa') { S.fluidId = 'udara'; S.liquidId = 'raksa'; S.v = 24; }
+    if (preset === 'air-raksa') { S.fluidId = 'air'; S.liquidId = 'raksa'; S.v = 4; }
+
+    fluidSel.value = S.fluidId;
+    liquidSel.value = S.liquidId;
+    applyFluidMax();
+    vRange.value = String(S.v);
+    refresh();
+  });
+});
+
+/* ============================================================================
+   9. ANALISIS DATA
+   ========================================================================== */
+
+const records = [];
+const chart = setupCanvas($('#chartCanvas'), () => drawChart());
+
+function renderTable() {
+  const body = $('#dataBody');
+
+  if (!records.length) {
+    body.innerHTML = '<tr class="empty-row"><td colspan="5">Belum ada data. Atur kelajuan di tab Simulasi, lalu tekan “Catat data saat ini”.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = records.map((r, i) =>
+    '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td>' + fmt(r.v, 2) + '</td>' +
+      '<td>' + fmt(r.v * r.v, 1) + '</td>' +
+      '<td>' + fmt(r.h * 1000, 2) + '</td>' +
+      '<td>' + fmt(r.dp, 1) + '</td>' +
+    '</tr>'
+  ).join('');
+}
+
+function drawChart() {
+  const ctx = chart.ctx, w = chart.w, h = chart.h;
+  if (w < 5 || h < 5) return;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  const L = 54, R = 18, T = 26, B = 44;
+  const pw = w - L - R;
+  const ph = h - T - B;
+
+  const pts = records.map((r) => ({ x: r.v * r.v, y: r.h * 1000 }));
+
+  let xMax = 10;
+  let yMax = 10;
+  for (const p of pts) {
+    xMax = Math.max(xMax, p.x);
+    yMax = Math.max(yMax, p.y);
+  }
+  xMax = Math.ceil((xMax * 1.18) / 5) * 5;
+  yMax = Math.ceil((yMax * 1.18) / 5) * 5;
+
+  const px = (x) => L + (x / xMax) * pw;
+  const py = (y) => T + ph - (y / yMax) * ph;
+
+  // grid
+  ctx.strokeStyle = '#eef4fd';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < 5; i++) {
+    const gx = L + (pw * i) / 5;
+    ctx.moveTo(Math.round(gx) + .5, T);
+    ctx.lineTo(Math.round(gx) + .5, T + ph);
+    const gy = T + (ph * i) / 5;
+    ctx.moveTo(L, Math.round(gy) + .5);
+    ctx.lineTo(L + pw, Math.round(gy) + .5);
+  }
+  ctx.stroke();
+
+  // sumbu
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(L, T);
+  ctx.lineTo(L, T + ph);
+  ctx.lineTo(L + pw, T + ph);
+  ctx.stroke();
+
+  // label sumbu
+  labelText(ctx, 'h (mm)', L - 6, 10, '#475569', 10.5, 'left', 700);
+  labelText(ctx, 'v² (m²/s²)', L + pw, T + ph + 30, '#475569', 10.5, 'right', 700);
+
+  for (let i = 0; i <= 5; i++) {
+    const xv = (xMax * i) / 5;
+    const yv = (yMax * i) / 5;
+    labelText(ctx, fmt(xv, 0), L + (pw * i) / 5, T + ph + 13, '#94a3b8', 9.5);
+    if (i > 0) labelText(ctx, fmt(yv, 0), L - 8, T + ph - (ph * i) / 5, '#94a3b8', 9.5, 'right');
+  }
+
+  // garis teori
+  const slopeT = slopeTheory(fluid().rho, liquid().rho, S.g);
+  ctx.save();
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(37,99,235,.45)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(0));
+  const xEnd = Math.min(xMax, yMax / slopeT);
+  ctx.lineTo(px(xEnd), py(slopeT * xEnd));
+  ctx.stroke();
+  ctx.restore();
+
+  // titik data
+  pts.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(px(p.x), py(p.y), 3.4, 0, Math.PI * 2);
+    ctx.fillStyle = '#1d4ed8';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  if (!pts.length) {
+    labelText(ctx, 'Belum ada data — catat beberapa pengukuran', L + pw / 2, T + ph / 2, '#a8b6cc', 12);
+  }
+}
+
+function computeSlope() {
+  if (records.length < 2) return null;
+  let sxy = 0, sxx = 0;
+  for (const r of records) {
+    const x = r.v * r.v;
+    const y = r.h * 1000;
+    sxy += x * y;
+    sxx += x * x;
+  }
+  if (sxx === 0) return null;
+  return sxy / sxx;
+}
+
+function updateSlopeBox() {
+  const s = computeSlope();
+  const st = slopeTheory(fluid().rho, liquid().rho, S.g);
+  $('#slopeData').textContent = s === null ? '—' : fmt(s, 4);
+  $('#slopeTheory').textContent = fmt(st, 4);
+}
+
+$('#recordBtn').addEventListener('click', () => {
+  const R = readings();
+  if (S.v < 0.05) {
+    $('#slopeNote').textContent = 'Kelajuan masih nol. Atur v > 0 pada tab Simulasi sebelum mencatat data.';
+    return;
+  }
+  if (records.length >= 40) records.shift();
+  records.push({ v: S.v, h: R.h, dp: R.dp, rho: R.rho, rhoL: R.rhoL });
+  renderTable();
+  drawChart();
+  updateSlopeBox();
+  $('#slopeNote').innerHTML =
+    'Data ke-' + records.length + ' tercatat (v = ' + fmt(S.v, 2) + ' m/s). ' +
+    'Kemiringan grafik = h/v² = ρ/(2ρ′g) — konstanta untuk fluida yang sama.';
+});
+
+$('#clearBtn').addEventListener('click', () => {
+  records.length = 0;
+  renderTable();
+  drawChart();
+  updateSlopeBox();
+  $('#slopeNote').textContent = 'Data dihapus. Catat beberapa pengukuran dengan kelajuan berbeda untuk melihat pola h ∝ v².';
+});
+
+$('#csvBtn').addEventListener('click', () => {
+  if (!records.length) {
+    $('#slopeNote').textContent = 'Belum ada data yang bisa diunduh.';
+    return;
+  }
+
+  const rows = [['v_m_per_s', 'v2_m2_per_s2', 'h_mm', 'delta_p_Pa', 'rho_fluida', 'rho_manometer']];
+  records.forEach((r) => {
+    rows.push([
+      r.v.toFixed(3),
+      (r.v * r.v).toFixed(3),
+      (r.h * 1000).toFixed(3),
+      r.dp.toFixed(3),
+      r.rho,
+      r.rhoL
+    ]);
+  });
+
+  const csv = rows.map((row) => row.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data-pipa-pitot.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+/* ============================================================================
+   10. LATIHAN
+   ========================================================================== */
+
+const QUIZ = [
+  {
+    q: 'Tabung pitot digunakan untuk mengukur …',
+    options: [
+      'tekanan total di dasar pipa',
+      'kelajuan aliran fluida',
+      'massa jenis fluida',
+      'suhu fluida'
+    ],
+    answer: 1,
+    why: 'Tabung pitot memanfaatkan selisih tekanan stagnasi dan tekanan statis untuk menentukan <b>kelajuan aliran</b> fluida.'
+  },
+  {
+    q: 'Pada mulut tabung pitot (titik stagnasi), besaran yang bernilai nol adalah …',
+    options: ['tekanan fluida', 'kelajuan fluida', 'massa jenis fluida', 'suhu fluida'],
+    answer: 1,
+    why: 'Fluida yang tepat berhenti di titik stagnasi memiliki <b>v = 0</b>, sehingga seluruh energi kinetiknya berubah menjadi tekanan.'
+  },
+  {
+    q: 'Udara (ρ = 1,2 kg/m³) mengalir dalam pipa. Manometer berisi air (ρ′ = 1.000 kg/m³) menunjukkan h = 2 cm. Kelajuan udara tersebut adalah … (g = 9,8 m/s²)',
+    options: ['9 m/s', '18 m/s', '36 m/s', '57 m/s'],
+    answer: 1,
+    why: 'v = √(2ρ′gh/ρ) = √(2 · 1.000 · 9,8 · 0,02 / 1,2) = √326,7 ≈ <b>18 m/s</b>.'
+  },
+  {
+    q: 'Jika kelajuan aliran menjadi dua kali semula, selisih tinggi zat cair manometer menjadi …',
+    options: ['tetap', '2 kali semula', '4 kali semula', '½ kali semula'],
+    answer: 2,
+    why: 'Karena h = ρv²/(2ρ′g), tinggi manometer sebanding dengan <b>v²</b>. Jika v dua kali, h menjadi empat kali.'
+  },
+  {
+    q: 'Rumus yang benar untuk menghitung kelajuan fluida (ρ) dari pembacaan manometer (ρ′, h) adalah …',
+    options: [
+      'v = √(2ρgh/ρ′)',
+      'v = √(2ρ′gh/ρ)',
+      'v = 2ρ′gh/ρ',
+      'v = √(ρgh/ρ′)'
+    ],
+    answer: 1,
+    why: 'Dari ½ρv² = ρ′gh diperoleh <b>v = √(2ρ′gh/ρ)</b>. Perhatikan bahwa ρ′ adalah zat cair manometer dan ρ adalah fluida yang mengalir.'
+  },
+  {
+    q: 'Mengapa aliran gas lebih sering diukur dengan manometer air daripada manometer raksa?',
+    options: [
+      'Karena raksa bereaksi dengan gas',
+      'Karena h berbanding terbalik dengan ρ′, sehingga raksa menghasilkan h yang sangat kecil dan sulit dibaca',
+      'Karena air lebih ringan sehingga tekanannya lebih besar',
+      'Karena rumus pitot hanya berlaku untuk air'
+    ],
+    answer: 1,
+    why: 'Karena h = ρv²/(2ρ′g), memakai raksa (ρ′ sangat besar) membuat <b>h sangat kecil</b> sehingga sulit diamati. Air atau alkohol memberi h yang lebih mudah dibaca.'
+  }
+];
+
+let quizScore = 0;
+let quizAnswered = 0;
+
+function renderQuiz() {
+  const box = $('#quizList');
+  box.innerHTML = QUIZ.map((item, qi) => {
+    const opts = item.options.map((opt, oi) =>
+      '<button class="opt" data-q="' + qi + '" data-o="' + oi + '">' +
+        '<span class="letter">' + String.fromCharCode(65 + oi) + '</span>' +
+        '<span>' + opt + '</span>' +
+      '</button>'
+    ).join('');
+
+    return '<div class="card q-card" data-card="' + qi + '">' +
+      '<p class="q-text"><span class="q-num">' + (qi + 1) + '.</span>' + item.q + '</p>' +
+      '<div class="options">' + opts + '</div>' +
+      '<div class="why" id="why-' + qi + '"></div>' +
+    '</div>';
+  }).join('');
+
+  box.querySelectorAll('.opt').forEach((btn) => {
+    btn.addEventListener('click', () => answerQuestion(
+      parseInt(btn.dataset.q, 10),
+      parseInt(btn.dataset.o, 10)
+    ));
+  });
+}
+
+function answerQuestion(qi, oi) {
+  const card = $('[data-card="' + qi + '"]');
+  if (!card || card.dataset.done === '1') return;
+
+  const item = QUIZ[qi];
+  const opts = card.querySelectorAll('.opt');
+
+  card.dataset.done = '1';
+  opts.forEach((b) => b.setAttribute('disabled', 'disabled'));
+
+  const correct = oi === item.answer;
+  opts[item.answer].classList.add('correct');
+  if (!correct) opts[oi].classList.add('wrong');
+
+  const why = card.querySelector('.why');
+  why.innerHTML = (correct ? '✅ <b>Tepat.</b> ' : '❌ <b>Belum tepat.</b> ') + item.why;
+  why.classList.add('show');
+
+  quizAnswered += 1;
+  if (correct) quizScore += 1;
+  $('#scorePill').textContent = 'Skor ' + quizScore + ' / ' + QUIZ.length;
+}
+
+$('#resetQuiz').addEventListener('click', () => {
+  quizScore = 0;
+  quizAnswered = 0;
+  $('#scorePill').textContent = 'Skor 0 / ' + QUIZ.length;
+  renderQuiz();
+});
+
+/* ============================================================================
+   11. INISIALISASI
+   ========================================================================== */
+
+applyFluidMax();
+vRange.value = String(S.v);
+updateReadouts();
+renderTable();
+renderQuiz();
+updateSlopeBox();
+
+requestAnimationFrame(() => {
+  drawScene(0.016);
+  drawChart();
+});
+
+/* ============================================================================
+   12. LOOP ANIMASI
+   ========================================================================== */
+
+let last = performance.now();
+
+function loop(ts) {
+  const dt = Math.min(0.05, Math.max(0.001, (ts - last) / 1000));
+  last = ts;
+
+  if (activeTab === 'simulasi') {
+    drawScene(dt);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
