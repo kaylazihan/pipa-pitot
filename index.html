@@ -675,7 +675,14 @@
     overflow: hidden;
     background: #fff;
     border: 1px solid var(--line);
+  }
+
+  .slide-sheet {
+    position: relative;
+    width: 100%;
+    height: 100%;
     container-type: inline-size;
+    background: var(--paper);
   }
 
   .slide-deco { position: absolute; border-radius: 50%; pointer-events: none; }
@@ -1058,11 +1065,11 @@
 
   /* ---------- slide (materi) ---------- */
   .slide-stage { background: var(--paper); border-color: #EEDFC7; }
-  .slide-stage::before {
+  .slide-sheet::before {
     content: '✦'; position: absolute; right: 5%; top: 6%;
     font-size: 1.7em; color: #57B7FF; opacity: .6; z-index: 0;
   }
-  .slide-stage::after {
+  .slide-sheet::after {
     content: '✦'; position: absolute; left: 4.5%; bottom: 9%;
     font-size: 1.1em; color: #FFBF39; opacity: .7; z-index: 0;
   }
@@ -1092,6 +1099,68 @@
   .slide-item.on .n { background: #F6DFB4; }
 
   footer { border-top-color: var(--line); color: #A08C74; }
+
+  /* ---------- mode presentasi (layar penuh) ---------- */
+  .fs-nav, .fs-count { display: none; }
+
+  .slide-stage:fullscreen {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 42%, #24313f, #0f1720 72%);
+  }
+
+  .slide-stage:fullscreen .slide-sheet {
+    width: min(100vw, calc(100vh * 16 / 9));
+    height: min(100vh, calc(100vw * 9 / 16));
+    box-shadow: 0 30px 90px rgba(0, 0, 0, .5);
+  }
+
+  .slide-stage:fullscreen .slide-body {
+    font-size: clamp(16px, 2.25cqw, 46px);
+  }
+
+  .slide-stage:fullscreen .fs-nav {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(59, 85, 111, .55);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(15, 23, 32, .22);
+    font: 700 26px/1 var(--display);
+    cursor: pointer;
+    opacity: .72;
+    transition: opacity .2s, background .2s;
+    z-index: 6;
+  }
+
+  .slide-stage:fullscreen .fs-nav:hover { opacity: 1; background: rgba(59, 85, 111, .9); }
+  .slide-stage:fullscreen .fs-nav:disabled { opacity: .12; cursor: default; }
+  .slide-stage:fullscreen .fs-nav.prev { left: 16px; }
+  .slide-stage:fullscreen .fs-nav.next { right: 16px; }
+
+  .slide-stage:fullscreen .fs-count {
+    display: block;
+    position: absolute;
+    right: 22px;
+    bottom: 16px;
+    color: rgba(59, 85, 111, .8);
+    font: 700 13px/1 var(--font);
+    letter-spacing: .04em;
+    z-index: 6;
+  }
 
 
   /* dekorasi ilustrasi dari deck (hanya di slide cover) */
@@ -1233,13 +1302,19 @@
     <div class="materi-grid">
       <div class="card slide-card">
         <div class="slide-stage" id="slideStage">
-          <div class="slide-deco d1"></div>
-          <div class="slide-deco d2"></div>
-          <div class="slide-body" id="slideBody"></div>
+          <div class="slide-sheet" id="slideSheet">
+            <div class="slide-deco d1"></div>
+            <div class="slide-deco d2"></div>
+            <div class="slide-body" id="slideBody"></div>
+          </div>
+          <button class="fs-nav prev" id="fsPrev" aria-label="Slide sebelumnya" tabindex="-1">‹</button>
+          <button class="fs-nav next" id="fsNext" aria-label="Slide berikutnya" tabindex="-1">›</button>
+          <div class="fs-count" id="fsCount">1 / 8</div>
         </div>
         <div class="slide-controls">
           <button class="btn" id="slidePrev" aria-label="Slide sebelumnya">‹ Sebelumnya</button>
           <button class="btn" id="slideNext" aria-label="Slide berikutnya">Berikutnya ›</button>
+          <button class="btn" id="fsBtn" title="Presentasikan dalam layar penuh (Esc untuk keluar)">⛶ Layar penuh</button>
           <span class="slide-count" id="slideCount">1 / 8</span>
         </div>
       </div>
@@ -1737,9 +1812,16 @@ function renderSlide() {
     '<h2 class="' + (s.cover ? 'slide-cover-title' : 'slide-title') + '">' + s.title + '</h2>' +
     '<div class="slide-text">' + s.html + '</div>';
 
-  $('#slideCount').textContent = (slideIdx + 1) + ' / ' + SLIDES.length;
-  $('#slidePrev').disabled = slideIdx === 0;
-  $('#slideNext').disabled = slideIdx === SLIDES.length - 1;
+  const counter = (slideIdx + 1) + ' / ' + SLIDES.length;
+  $('#slideCount').textContent = counter;
+  $('#fsCount').textContent = counter;
+
+  const atStart = slideIdx === 0;
+  const atEnd = slideIdx === SLIDES.length - 1;
+  $('#slidePrev').disabled = atStart;
+  $('#slideNext').disabled = atEnd;
+  $('#fsPrev').disabled = atStart;
+  $('#fsNext').disabled = atEnd;
 
   $$('.slide-item').forEach((b, i) => b.classList.toggle('on', i === slideIdx));
 }
@@ -1759,6 +1841,40 @@ $('#slideList').innerHTML = SLIDES.map((s, i) =>
 
 $('#slidePrev').addEventListener('click', () => goSlide(-1));
 $('#slideNext').addEventListener('click', () => goSlide(1));
+$('#fsPrev').addEventListener('click', () => goSlide(-1));
+$('#fsNext').addEventListener('click', () => goSlide(1));
+
+/* --- mode presentasi: layar penuh --- */
+const stageEl = document.getElementById('slideStage');
+const fsBtn = document.getElementById('fsBtn');
+
+function inFullscreen() {
+  return document.fullscreenElement === stageEl || document.webkitFullscreenElement === stageEl;
+}
+
+function toggleFullscreen() {
+  if (!inFullscreen()) {
+    const req = stageEl.requestFullscreen || stageEl.webkitRequestFullscreen;
+    if (!req) {
+      fsBtn.textContent = 'Layar penuh tidak didukung';
+      return;
+    }
+    const result = req.call(stageEl);
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document);
+  }
+}
+
+fsBtn.addEventListener('click', toggleFullscreen);
+
+document.addEventListener('fullscreenchange', () => {
+  fsBtn.textContent = inFullscreen() ? '⤢ Keluar layar penuh' : '⛶ Layar penuh';
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  fsBtn.textContent = inFullscreen() ? '⤢ Keluar layar penuh' : '⛶ Layar penuh';
+});
 
 $('#slideList').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-slide]');
@@ -1786,6 +1902,9 @@ document.addEventListener('keydown', (e) => {
   if (activeTab !== 'materi') return;
   if (e.key === 'ArrowRight') { e.preventDefault(); goSlide(1); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); goSlide(-1); }
+  if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
+  if (e.key === 'Home') { e.preventDefault(); slideIdx = 0; renderSlide(); }
+  if (e.key === 'End') { e.preventDefault(); slideIdx = SLIDES.length - 1; renderSlide(); }
 });
 
 renderSlide();
